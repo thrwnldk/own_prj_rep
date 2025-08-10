@@ -1,17 +1,26 @@
 FROM mcr.microsoft.com/dotnet/sdk:6.0
 
-# Установка .NET Interactive через прямое скачивание
-RUN wget https://www.nuget.org/api/v2/package/Microsoft.dotnet-interactive/ -O interactive.zip && \
-    unzip interactive.zip -d /dotnet-tools && \
-    rm interactive.zip && \
-    export PATH="$PATH:/dotnet-tools/tools"
+# Установка необходимых зависимостей
+RUN apt-get update && \
+    apt-get install -y wget unzip && \
+    wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y dotnet-sdk-6.0
+
+# Альтернативный способ установки .NET Interactive
+RUN dotnet new tool-manifest && \
+    dotnet tool install Microsoft.dotnet-interactive && \
+    export PATH="$PATH:$HOME/.dotnet/tools"
 
 # Установка Jupyter
-RUN /dotnet-tools/tools/dotnet-interactive jupyter install
+RUN dotnet interactive jupyter install
 
+# Настройка рабочей директории
 WORKDIR /workspace
 COPY . .
 
 EXPOSE 8888
 
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--allow-root"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--allow-root", "--no-browser"]
