@@ -1,23 +1,22 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0
+FROM mcr.microsoft.com/dotnet/sdk:8.0
 
-# Установка необходимых зависимостей
+# Установка необходимых пакетов
 RUN apt-get update && \
     apt-get install -y wget unzip && \
-    wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
-    dpkg -i packages-microsoft-prod.deb && \
-    rm packages-microsoft-prod.deb && \
-    apt-get update && \
-    apt-get install -y dotnet-sdk-6.0
+    rm -rf /var/lib/apt/lists/*
 
-# Альтернативный способ установки .NET Interactive
-RUN dotnet new tool-manifest && \
-    dotnet tool install Microsoft.dotnet-interactive && \
-    export PATH="$PATH:$HOME/.dotnet/tools"
+# Установка .NET Interactive через прямое скачивание NuGet пакета
+RUN wget https://www.nuget.org/api/v2/package/Microsoft.dotnet-interactive/3.0.0 -O interactive.zip && \
+    mkdir -p /dotnet-tools && \
+    unzip interactive.zip -d /dotnet-tools && \
+    rm interactive.zip && \
+    chmod +x /dotnet-tools/tools/* && \
+    ln -s /dotnet-tools/tools/dotnet-interactive /usr/local/bin/dotnet-interactive
 
 # Установка Jupyter
-RUN dotnet interactive jupyter install
+RUN dotnet-interactive jupyter install
 
-# Настройка рабочей директории
+# Настройка рабочей среды
 WORKDIR /workspace
 COPY . .
 
